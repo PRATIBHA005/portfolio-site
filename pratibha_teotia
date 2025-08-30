@@ -1,0 +1,813 @@
+# Create a GitHub-ready Vite + React + Tailwind project for Pratibha's 3D portfolio.
+# It includes lightweight UI components to avoid external UI libraries,
+# three.js + @react-three/fiber/drei, framer-motion, and lucide-react.
+# Finally, bundle everything into a zip for download.
+
+import os, json, textwrap, zipfile, pathlib
+
+root = "/mnt/data/pratibha-portfolio"
+os.makedirs(root, exist_ok=True)
+
+# package.json
+package_json = {
+  "name": "pratibha-portfolio",
+  "private": True,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "three": "^0.160.0",
+    "@react-three/fiber": "^8.15.12",
+    "@react-three/drei": "^9.103.0",
+    "framer-motion": "^11.0.0",
+    "lucide-react": "^0.452.0",
+    "clsx": "^2.0.0"
+  },
+  "devDependencies": {
+    "vite": "^5.2.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.33",
+    "autoprefixer": "^10.4.18"
+  }
+}
+with open(os.path.join(root, "package.json"), "w") as f:
+    json.dump(package_json, f, indent=2)
+
+# tailwind config
+tailwind_config = textwrap.dedent("""\
+  /** @type {import('tailwindcss').Config} */
+  export default {
+    content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
+    theme: {
+      extend: {},
+    },
+    plugins: [],
+  }
+""")
+with open(os.path.join(root, "tailwind.config.js"), "w") as f:
+    f.write(tailwind_config)
+
+# postcss config
+postcss_config = textwrap.dedent("""\
+  export default {
+    plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    },
+  }
+""")
+with open(os.path.join(root, "postcss.config.js"), "w") as f:
+    f.write(postcss_config)
+
+# vite config with alias @ -> /src
+vite_config = textwrap.dedent("""\
+  import { defineConfig } from 'vite'
+  import react from '@vitejs/plugin-react'
+
+  export default defineConfig({
+    plugins: [react()],
+    resolve: {
+      alias: {
+        '@': '/src'
+      }
+    }
+  })
+""")
+with open(os.path.join(root, "vite.config.js"), "w") as f:
+    f.write(vite_config)
+
+# index.html
+index_html = textwrap.dedent("""\
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Pratibha — Portfolio</title>
+    </head>
+    <body class="bg-neutral-950">
+      <div id="root"></div>
+      <script type="module" src="/src/main.jsx"></script>
+    </body>
+  </html>
+""")
+with open(os.path.join(root, "index.html"), "w") as f:
+    f.write(index_html)
+
+# src structure
+os.makedirs(os.path.join(root, "src/components/ui"), exist_ok=True)
+os.makedirs(os.path.join(root, "src"), exist_ok=True)
+
+# index.css
+index_css = textwrap.dedent("""\
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+
+  * { box-sizing: border-box; }
+  html, body, #root { height: 100%; }
+""")
+with open(os.path.join(root, "src/index.css"), "w") as f:
+    f.write(index_css)
+
+# main.jsx
+main_jsx = textwrap.dedent("""\
+  import React from 'react'
+  import { createRoot } from 'react-dom/client'
+  import './index.css'
+  import App from './App.jsx'
+
+  const root = createRoot(document.getElementById('root'))
+  root.render(<App />)
+""")
+with open(os.path.join(root, "src/main.jsx"), "w") as f:
+    f.write(main_jsx)
+
+# Lightweight UI primitives to mirror shadcn-like imports
+button = textwrap.dedent("""\
+  import React from 'react'
+  import { clsx } from 'clsx'
+
+  export function Button({ variant = 'default', className = '', ...props }) {
+    const base = 'inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition border focus:outline-none';
+    const styles = {
+      default: 'bg-white text-neutral-900 hover:bg-neutral-200 border-transparent',
+      outline: 'bg-transparent text-neutral-200 hover:bg-neutral-800 border-neutral-700',
+      ghost: 'bg-transparent text-neutral-200 hover:bg-neutral-800 border-transparent',
+      secondary: 'bg-neutral-800 text-neutral-100 hover:bg-neutral-700 border-neutral-700'
+    }
+    return <button className={clsx(base, styles[variant], className)} {...props} />
+  }
+""")
+card = textwrap.dedent("""\
+  import React from 'react'
+  export function Card({ className = '', children }) {
+    return <div className={`rounded-2xl border ${className}`}>{children}</div>
+  }
+  export function CardHeader({ children }) {
+    return <div className="px-5 pt-5">{children}</div>
+  }
+  export function CardTitle({ children }) {
+    return <h3 className="text-lg font-semibold">{children}</h3>
+  }
+  export function CardContent({ children, className = '' }) {
+    return <div className={`px-5 pb-5 ${className}`}>{children}</div>
+  }
+""")
+badge = textwrap.dedent("""\
+  import React from 'react'
+  export function Badge({ className = '', children, variant='default' }) {
+    const base = 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border';
+    const style = variant === 'secondary'
+      ? 'bg-neutral-800 border-neutral-700 text-neutral-300'
+      : 'bg-neutral-900 border-neutral-700 text-neutral-300';
+    return <span className={`${base} ${style} ${className}`}>{children}</span>
+  }
+""")
+inputs = textwrap.dedent("""\
+  import React from 'react'
+  export function Input(props) {
+    return <input {...props} className={`px-3 py-2 rounded-md border ${props.className || ''}`} />
+  }
+  export function Textarea(props) {
+    return <textarea {...props} className={`px-3 py-2 rounded-md border ${props.className || ''}`}></textarea>
+  }
+""")
+
+with open(os.path.join(root, "src/components/ui/button.jsx"), "w") as f:
+    f.write(button)
+with open(os.path.join(root, "src/components/ui/card.jsx"), "w") as f:
+    f.write(card)
+with open(os.path.join(root, "src/components/ui/badge.jsx"), "w") as f:
+    f.write(badge)
+with open(os.path.join(root, "src/components/ui/input.jsx"), "w") as f:
+    f.write(inputs)
+
+# App.jsx: Combine previous canvas code, adapted to local UI imports
+app_jsx = textwrap.dedent("""\
+  import React, { useMemo, useRef, useState, useEffect } from "react";
+  import { Canvas, useFrame } from "@react-three/fiber";
+  import { OrbitControls, Float, Stars, Environment, ContactShadows, Text } from "@react-three/drei";
+  import { motion } from "framer-motion";
+  import { Mail, Github, Linkedin, FileDown, Copy, Check, Phone, Globe, Palette, Move3D, Sparkles } from "lucide-react";
+  import { Button } from "@/components/ui/button";
+  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+  import { Badge } from "@/components/ui/badge";
+  import { Input, Textarea } from "@/components/ui/input";
+
+  // OPTIONAL: Add your Formspree endpoint to enable the built-in contact form
+  const FORM_ENDPOINT = ""; // e.g., "https://formspree.io/f/yourid"
+
+  const profile = {
+    name: "Pratibha Teotia",
+    role: "Market Research • Business Intelligence • Strategy",
+    tagline: "I turn messy data into crisp, executive-ready decisions — from factory floors to boardrooms.",
+    email: "pratibhateotia05@gmail.com", // configured
+    phone: "", // add +91-XXXXXXXXXX to include in vCard and Call button
+    location: "India",
+    heroKeywords: ["Consumer Insights", "Industry 4.0 KPIs", "OEE & Downtime", "BI Dashboards"],
+    summary:
+      "Market research professional blending qualitative insight with quantitative rigor. Hands-on with automotive and FMCG data, comfortable moving from SQL and Python to board-level narratives and decision frameworks.",
+    highlights: [
+      "Research Intern at Novus Insights: collaborated closely with the Maruti Suzuki plant; operationally responsible for analysis of respondent data in the automotive domain.",
+      "Coordinated deployment of real-time KPI dashboards across pan-India plants at Hindustan Unilever, Amber Enterprises, and Hero MotoCorp; standardized OEE/downtime/energy views and supported server migration & Grafana automation.",
+      "Content research and storytelling for TED/TEDx-style projects; known for converting complex data into memorable narratives."
+    ],
+    skills: [
+      "SQL (query optimization)",
+      "Python (pandas)",
+      "Excel/Power Query",
+      "Power BI",
+      "Grafana",
+      "Tableau",
+      "Survey Design & Coding",
+      "Sampling & Weighting",
+      "Segmentation",
+      "A/B Testing",
+      "VoC Analytics",
+      "Data Storytelling",
+      "Industry 4.0 KPIs (OEE, downtime, energy)",
+      "Stakeholder Management"
+    ],
+    projects: [
+      {
+        title: "Pan-India Manufacturing KPI Platform",
+        client: "HUL • Amber • Hero MotoCorp",
+        description:
+          "Unified plant telemetry + operator logs into a Grafana suite surfacing OEE, downtime, and energy KPIs with machine/shift drilldowns and SOPs for daily standups.",
+        impact: "Single source of truth; reduced daily reporting effort and improved uptime conversations",
+        tags: ["Grafana", "SQL", "ETL", "OEE", "Industry 4.0"],
+        link: "#"
+      },
+      {
+        title: "Automotive Voice of Customer (VoC) Pipeline",
+        client: "Maruti Suzuki",
+        description:
+          "Automated cleansing, category coding, and trend extraction for respondent feedback; piped into leadership dashboards with alerting on shifts in satisfaction drivers.",
+        impact: "~40% faster turnaround from field to insight",
+        tags: ["Python", "Quant Research", "Dashboards", "VoC"],
+        link: "#"
+      },
+      {
+        title: "Brand Communication Testing — Message & Channel Mix",
+        client: "FMCG Portfolio",
+        description:
+          "Designed experiments to validate creative routes and channel allocation; packaged results into an executive narrative with clear actions and guardrails.",
+        impact: "Higher recall and smarter spend allocation",
+        tags: ["Message Testing", "MMM", "Segmentation"],
+        link: "#"
+      }
+    ],
+    testimonials: [
+      { quote: "Pratibha’s dashboards became our single source of truth. Clear, actionable, and on time.", author: "Ops Lead, Manufacturing Client" },
+      { quote: "She connects the dots between research and business impact — a rare combination.", author: "Director, Automotive Client" }
+    ],
+    links: {
+      linkedin: "https://www.linkedin.com/in/pratibhateotia/",
+      github: "",
+      website: ""
+    }
+  };
+
+  const PALETTES = {
+    violetMint: {
+      name: "Charcoal + Electric Violet",
+      ring: "ring-purple-400",
+      grad: "from-violet-500 via-fuchsia-400 to-teal-300",
+      glow: "shadow-[0_0_60px_-15px_rgba(139,92,246,0.6)]"
+    },
+    indigoIvory: {
+      name: "Ivory + Indigo",
+      ring: "ring-indigo-300",
+      grad: "from-indigo-500 via-sky-400 to-emerald-300",
+      glow: "shadow-[0_0_60px_-15px_rgba(99,102,241,0.55)]"
+    },
+    navySunset: {
+      name: "Navy + Sunset",
+      ring: "ring-pink-300",
+      grad: "from-rose-500 via-orange-400 to-yellow-300",
+      glow: "shadow-[0_0_60px_-15px_rgba(244,114,182,0.55)]"
+    }
+  };
+
+  function useClipboard(timeout = 1200) {
+    const [copied, setCopied] = useState(false);
+    return {
+      copied,
+      async copy(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+          setTimeout(() => setCopied(false), timeout);
+        } catch {}
+      }
+    };
+  }
+
+  // 3D
+  function RotatingGlobe() {
+    const globe = useRef();
+    const satellites = useRef([]);
+    useFrame((state) => {
+      const t = state.clock.getElapsedTime();
+      if (globe.current) {
+        globe.current.rotation.y = t * 0.2;
+        globe.current.rotation.x = Math.sin(t * 0.1) * 0.08;
+      }
+      satellites.current.forEach((s, i) => {
+        const r = 2.2 + (i % 3) * 0.15;
+        const speed = 0.4 + (i % 5) * 0.05;
+        if (!s) return;
+        s.position.x = Math.cos(t * speed + i) * r;
+        s.position.z = Math.sin(t * speed + i) * r;
+        s.position.y = Math.sin(t * 0.6 + i) * 0.25;
+      });
+    });
+    return (
+      <Float speed={1.6} rotationIntensity={0.35} floatIntensity={0.9}>
+        <group>
+          <mesh ref={globe}>
+            <icosahedronGeometry args={[1.3, 2]} />
+            <meshStandardMaterial metalness={0.5} roughness={0.35} color="#93c5fd" emissive="#1f2937" emissiveIntensity={0.12} />
+          </mesh>
+          {[...Array(8)].map((_, i) => (
+            <mesh key={i} ref={(el) => (satellites.current[i] = el)}>
+              <sphereGeometry args={[0.06, 16, 16]} />
+              <meshStandardMaterial metalness={0.8} roughness={0.2} color="#a78bfa" />
+            </mesh>
+          ))}
+        </group>
+      </Float>
+    );
+  }
+
+  function PTMonogram3D({ initials = "PT" }) {
+    const group = useRef();
+    useFrame((state) => {
+      const t = state.clock.getElapsedTime();
+      if (group.current) {
+        group.current.rotation.y = Math.sin(t * 0.6) * 0.25;
+        group.current.rotation.x = Math.cos(t * 0.4) * 0.12;
+      }
+    });
+    return (
+      <Float speed={1.5} rotationIntensity={0.4} floatIntensity={1.0}>
+        <group ref={group}>
+          <Text fontSize={1.2} letterSpacing={0.02} anchorX="center" anchorY="middle">
+            {initials}
+            <meshStandardMaterial metalness={0.85} roughness={0.25} color="#a78bfa" />
+          </Text>
+          <mesh position={[0, -0.1, -0.1]}>
+            <torusGeometry args={[1.3, 0.02, 16, 100]} />
+            <meshStandardMaterial metalness={0.7} roughness={0.35} color="#67e8f9" />
+          </mesh>
+        </group>
+      </Float>
+    );
+  }
+
+  function mailtoLink(email, subject = "Hello Pratibha", body = "") {
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  function downloadVCard({ name, email, phone, org = "", title = profile.role, url = profile.links.linkedin }) {
+    const v = [
+      "BEGIN:VCARD",
+      "VERSION:3.0",
+      `FN:${name}`,
+      title ? `TITLE:${title}` : "",
+      org ? `ORG:${org}` : "",
+      email ? `EMAIL;TYPE=INTERNET:${email}` : "",
+      phone ? `TEL;TYPE=CELL:${phone}` : "",
+      url ? `URL:${url}` : "",
+      "END:VCARD",
+    ].filter(Boolean).join("\\n");
+    const blob = new Blob([v], { type: "text/vcard" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${name.replace(/\\s+/g, "_").toLowerCase()}.vcf`;
+    a.click();
+  }
+
+  function GradientText({ children, palette }) {
+    return <span className={`bg-gradient-to-tr ${palette.grad} bg-clip-text text-transparent`}>{children}</span>;
+  }
+
+  function ContactForm({ palette, emailCta }) {
+    const [status, setStatus] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [form, setForm] = useState({ name: "", email: "", message: "" });
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      setLoading(true);
+      setStatus("");
+      try {
+        if (FORM_ENDPOINT) {
+          const res = await fetch(FORM_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...form })
+          });
+          if (res.ok) {
+            setStatus("Thanks! I’ll get back to you soon.");
+            setForm({ name: "", email: "", message: "" });
+          } else {
+            window.location.href = emailCta;
+          }
+        } else {
+          window.location.href = emailCta;
+        }
+      } catch {
+        window.location.href = emailCta;
+      } finally {
+        setLoading(false);
+      }
+    }
+    return (
+      <form onSubmit={handleSubmit} className="grid gap-3" aria-label="Contact form">
+        <Input
+          placeholder="Your name"
+          className="bg-neutral-950 border-neutral-800"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          required
+        />
+        <Input
+          type="email"
+          placeholder="Your email"
+          className="bg-neutral-950 border-neutral-800"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          required
+        />
+        <Textarea
+          placeholder="What would you like to build or discuss?"
+          className="bg-neutral-950 border-neutral-800 min-h-[120px]"
+          value={form.message}
+          onChange={(e) => setForm({ ...form, message: e.target.value })}
+          required
+        />
+        <div className="flex items-center gap-2">
+          <Button disabled={loading} className="rounded-full">
+            {loading ? "Sending…" : "Send"}
+          </Button>
+          <Button type="button" variant="outline" className="rounded-full border-neutral-700" onClick={() => navigator.clipboard.writeText(profile.email)}>
+            <Copy className="h-4 w-4 mr-2" /> Copy Address
+          </Button>
+        </div>
+        {status && <div className={`text-sm mt-1 bg-gradient-to-tr ${palette.grad} bg-clip-text text-transparent`}>{status}</div>}
+        {!FORM_ENDPOINT && (
+          <div className="text-xs text-neutral-500 mt-1">Tip: Add your Formspree endpoint in <code>FORM_ENDPOINT</code> to enable in-app submissions.</div>
+        )}
+      </form>
+    );
+  }
+
+  function HeroScene({ showControls = false, sceneKey = "globe" }) {
+    return (
+      <Canvas camera={{ position: [0, 0, 5], fov: 50 }} className="h-[52vh] w-full rounded-2xl">
+        <ambientLight intensity={0.9} />
+        <directionalLight position={[5, 5, 5]} intensity={1.2} />
+        <Stars radius={80} depth={25} count={2500} factor={4} fade speed={1} />
+        {sceneKey === "globe" ? <RotatingGlobe /> : <PTMonogram3D initials="PT" />}
+        <ContactShadows position={[0, -1.6, 0]} opacity={0.45} scale={10} blur={2} far={4} />
+        <Environment preset="city" />
+        {showControls && <OrbitControls enableZoom={false} />}
+      </Canvas>
+    );
+  }
+
+  export default function App() {
+    const [paletteKey, setPaletteKey] = useState("violetMint");
+    const [show3D, setShow3D] = useState(true);
+    const [sceneKey, setSceneKey] = useState("globe");
+    const palette = PALETTES[paletteKey];
+    const { copied, copy } = useClipboard();
+
+    const emailCta = useMemo(
+      () => mailtoLink(profile.email, "Opportunities & Collaborations", `Hi ${profile.name},\\n\\nI found your portfolio and would love to connect about...`),
+      []
+    );
+
+    const [kwIndex, setKwIndex] = useState(0);
+    useEffect(() => {
+      const id = setInterval(() => setKwIndex((i) => (i + 1) % profile.heroKeywords.length), 1800);
+      return () => clearInterval(id);
+    }, []);
+
+    return (
+      <div className="min-h-screen bg-neutral-950 text-neutral-100 selection:bg-fuchsia-400/40">
+        <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-neutral-950/70">
+          <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`h-9 w-9 rounded-2xl bg-gradient-to-tr ${palette.grad} ${palette.glow} grid place-items-center font-semibold text-neutral-900`}>PT</div>
+              <div className="leading-tight">
+                <div className="font-semibold">{profile.name}</div>
+                <div className="text-xs text-neutral-400">{profile.role}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Palette selector */}
+              <div className="hidden sm:flex items-center gap-2 rounded-full border border-neutral-800/70 bg-neutral-900/60 px-2 py-1">
+                <Palette className="h-4 w-4" />
+                <select
+                  value={paletteKey}
+                  onChange={(e) => setPaletteKey(e.target.value)}
+                  className="bg-transparent text-sm outline-none"
+                  aria-label="Choose color palette"
+                >
+                  {Object.entries(PALETTES).map(([k, v]) => (
+                    <option key={k} value={k} className="bg-neutral-900">{v.name}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Scene selector */}
+              <div className="hidden sm:flex items-center gap-2 rounded-full border border-neutral-800/70 bg-neutral-900/60 px-2 py-1">
+                <span className="text-xs text-neutral-400 mr-1">Scene</span>
+                <select
+                  value={sceneKey}
+                  onChange={(e) => setSceneKey(e.target.value)}
+                  className="bg-transparent text-sm outline-none"
+                  aria-label="Choose 3D scene"
+                >
+                  <option value="globe" className="bg-neutral-900">Globe</option>
+                  <option value="monogram" className="bg-neutral-900">Monogram</option>
+                </select>
+              </div>
+              {/* 3D toggle */}
+              <button
+                onClick={() => setShow3D((s) => !s)}
+                className="inline-flex items-center gap-2 rounded-full border border-neutral-800/70 bg-neutral-900/60 px-3 py-1 text-sm hover:bg-neutral-800"
+                aria-pressed={show3D}
+              >
+                <Move3D className="h-4 w-4" /> {show3D ? "3D On" : "3D Off"}
+              </button>
+              <a href={emailCta}>
+                <Button className={`rounded-md bg-gradient-to-tr ${palette.grad} text-neutral-900 font-semibold`}>Email Me</Button>
+              </a>
+            </div>
+          </div>
+        </header>
+
+        {/* Hero */}
+        <section className="mx-auto max-w-6xl px-4 pt-8">
+          <div className="grid lg:grid-cols-2 gap-8 items-center">
+            <div>
+              <motion.h1
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="text-4xl md:text-5xl font-semibold tracking-tight"
+              >
+                Data to <GradientText palette={palette}>Decisions</GradientText>
+              </motion.h1>
+              <p className="mt-3 text-neutral-300 max-w-prose">{profile.tagline}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {profile.heroKeywords.map((k, i) => (
+                  <Badge key={k} className={`bg-neutral-900 border border-neutral-800 ${i === kwIndex ? "ring-2 " + palette.ring : ""}`}>
+                    <Sparkles className="h-3.5 w-3.5 mr-1" /> {k}
+                  </Badge>
+                ))}
+              </div>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <a href={profile.links.linkedin} target="_blank" rel="noreferrer">
+                  <Button variant="outline" className="border-neutral-700 hover:bg-neutral-800">
+                    <Linkedin className="h-4 w-4 mr-2" /> LinkedIn
+                  </Button>
+                </a>
+                {profile.links.github && (
+                  <a href={profile.links.github} target="_blank" rel="noreferrer">
+                    <Button variant="outline" className="border-neutral-700 hover:bg-neutral-800">
+                      <Github className="h-4 w-4 mr-2" /> GitHub
+                    </Button>
+                  </a>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => downloadVCard({ name: profile.name, email: profile.email, phone: profile.phone })}
+                  className="border-neutral-700 hover:bg-neutral-800"
+                >
+                  <FileDown className="h-4 w-4 mr-2" /> Download vCard
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigator.clipboard.writeText(profile.email)}
+                  className="border-neutral-700 hover:bg-neutral-800"
+                >
+                  <Copy className="h-4 w-4 mr-2" /> Copy Email
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative">
+              {show3D ? (
+                <div className={`rounded-2xl border border-neutral-800/80 bg-neutral-900/40 p-2 shadow-xl`}>
+                  <HeroScene sceneKey={sceneKey} />
+                </div>
+              ) : (
+                <div className={`rounded-2xl border border-neutral-800/80 bg-neutral-900/60 p-8`}>
+                  <div className="grid place-items-center h-[52vh]">
+                    <div className="text-center">
+                      <div className={`mx-auto h-28 w-28 rounded-full bg-gradient-to-tr ${palette.grad} mb-4`} />
+                      <div className="text-neutral-300">3D disabled — battery saver mode</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* About & Highlights */}
+        <section className="mx-auto max-w-6xl px-4 mt-10">
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="bg-neutral-900/40 border-neutral-800">
+              <CardHeader>
+                <CardTitle>About</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-neutral-300 leading-relaxed">{profile.summary}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-neutral-900/40 border-neutral-800 md:col-span-2">
+              <CardHeader>
+                <CardTitle>Highlights</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="grid sm:grid-cols-2 gap-3 list-disc list-inside text-neutral-300">
+                  {profile.highlights.map((h) => <li key={h}>{h}</li>)}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Case Studies */}
+        <section className="mx-auto max-w-6xl px-4 mt-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Featured Case Studies</h2>
+            <a href="#contact" className="text-sm text-neutral-400 hover:underline">Let’s build yours</a>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {profile.projects.map((p) => (
+              <Card key={p.title} className="group bg-neutral-900/40 border-neutral-800 hover:border-neutral-700 transition-all">
+                <CardHeader>
+                  <CardTitle>{p.title}</CardTitle>
+                  <div className="text-xs text-neutral-400">{p.client}</div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-neutral-300 mb-3">{p.description}</p>
+                  <div className="text-xs text-neutral-400 mb-3">Impact: {p.impact}</div>
+                  <div className="flex flex-wrap gap-2">
+                    {p.tags.map((t) => (
+                      <Badge key={t} variant="secondary">{t}</Badge>
+                    ))}
+                  </div>
+                  {p.link && (
+                    <div className="mt-4">
+                      <a href={p.link} className={`text-sm font-medium bg-gradient-to-tr from-violet-500 via-fuchsia-400 to-teal-300 bg-clip-text text-transparent`}>View details →</a>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* Skills */}
+        <section className="mx-auto max-w-6xl px-4 mt-10">
+          <h2 className="text-xl font-semibold mb-4">Skills</h2>
+          <div className="flex flex-wrap gap-2">
+            {profile.skills.map((s) => <Badge key={s}>{s}</Badge>)}
+          </div>
+        </section>
+
+        {/* Testimonials */}
+        <section className="mx-auto max-w-6xl px-4 mt-10">
+          <h2 className="text-xl font-semibold mb-4">What people say</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {profile.testimonials.map((t, idx) => (
+              <Card key={idx} className="bg-neutral-900/40 border-neutral-800">
+                <CardContent className="pt-6">
+                  <p className="text-neutral-200 text-lg leading-relaxed">“{t.quote}”</p>
+                  <div className={`mt-4 text-sm bg-gradient-to-tr from-violet-500 via-fuchsia-400 to-teal-300 bg-clip-text text-transparent`}>— {t.author}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* Contact */}
+        <section id="contact" className="mx-auto max-w-6xl px-4 mt-12 mb-20">
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="bg-neutral-900/40 border-neutral-800">
+              <CardHeader><CardTitle>Let’s talk</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-neutral-300 mb-4">Prefer email? Use the button below, or send a quick note.</p>
+                <div className="flex flex-wrap gap-3 mb-6">
+                  <a href={emailCta}><Button className="rounded-full bg-white text-neutral-900 font-semibold"><Mail className="h-4 w-4 mr-2" /> Email {profile.name.split(" ")[0]}</Button></a>
+                  {profile.phone && (
+                    <a href={`tel:${profile.phone}`}><Button variant="outline" className="rounded-full border-neutral-700 hover:bg-neutral-800"><Phone className="h-4 w-4 mr-2" /> Call</Button></a>
+                  )}
+                </div>
+                <ContactForm palette={palette} emailCta={emailCta} />
+              </CardContent>
+            </Card>
+            <Card className="bg-neutral-900/40 border-neutral-800">
+              <CardHeader><CardTitle>Availability & Links</CardTitle></CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-neutral-300">
+                  <li className="flex items-center gap-3"><Globe className="h-4 w-4" /> Based in {profile.location} • Open to remote & hybrid</li>
+                  <li className="flex items-center gap-3"><Linkedin className="h-4 w-4" /> <a className={`hover:underline bg-gradient-to-tr from-violet-500 via-fuchsia-400 to-teal-300 bg-clip-text text-transparent`} href={profile.links.linkedin} target="_blank" rel="noreferrer">LinkedIn</a></li>
+                  {profile.links.github && (<li className="flex items-center gap-3"><Github className="h-4 w-4" /> <a className="hover:underline" href={profile.links.github} target="_blank" rel="noreferrer">GitHub</a></li>)}
+                </ul>
+                <div className="mt-6">
+                  <Button variant="outline" className="rounded-full border-neutral-700" onClick={() => downloadVCard({ name: profile.name, email: profile.email, phone: profile.phone })}><FileDown className="h-4 w-4 mr-2" /> Download vCard</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Sticky Email CTA */}
+        <a href={emailCta} className="fixed bottom-5 right-5 z-50 rounded-full px-5 py-3 font-medium shadow-lg bg-white text-neutral-900">
+          <span className="inline-flex items-center gap-2"><Mail className="h-4 w-4" /> Email Me</span>
+        </a>
+
+        {/* Footer */}
+        <footer className="border-t border-neutral-900/60 mt-16">
+          <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-neutral-500 flex items-center justify-between">
+            <div>© {new Date().getFullYear()} {profile.name}. All rights reserved.</div>
+            <div><span className="opacity-70">Palette:</span> <span className={`ml-1 bg-gradient-to-tr from-violet-500 via-fuchsia-400 to-teal-300 bg-clip-text text-transparent`}>{palette.name || "Vibrant"}</span></div>
+          </div>
+        </footer>
+
+        {/* JSON-LD */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Person",
+            name: profile.name,
+            jobTitle: profile.role,
+            email: profile.email ? `mailto:${profile.email}` : undefined,
+            url: profile.links.website || profile.links.linkedin,
+            sameAs: [profile.links.linkedin, profile.links.github].filter(Boolean)
+          })
+        }} />
+      </div>
+    );
+  }
+""")
+with open(os.path.join(root, "src/App.jsx"), "w") as f:
+    f.write(app_jsx)
+
+# README
+readme = textwrap.dedent("""\
+  # Pratibha — Interactive 3D Portfolio (Vite + React + Three + Tailwind)
+
+  ## 🚀 Quick Start (Local)
+  1) Install Node.js LTS (https://nodejs.org)
+  2) In this folder, run:
+     ```bash
+     npm install
+     npm run dev
+     ```
+  3) Open the local link (usually http://localhost:5173).
+
+  ## 🌐 Deploy to Vercel (Recommended)
+  1) Create a GitHub repo and push this folder:
+     ```bash
+     git init
+     git add .
+     git commit -m "Initial"
+     git branch -M main
+     git remote add origin https://github.com/<your-username>/portfolio-site.git
+     git push -u origin main
+     ```
+  2) Go to https://vercel.com → New Project → Import `portfolio-site` → Deploy.
+  3) You’ll get a live link like: https://portfolio-site.vercel.app
+
+  ## 🔧 Customize
+  - Edit `src/App.jsx` → the `profile` object for your email, phone, LinkedIn, summary, highlights, skills, and projects.
+  - Set `FORM_ENDPOINT` to a Formspree endpoint to enable the in-app contact form.
+  - Use the header controls to switch color palette and 3D scene (Globe/Monogram).
+""")
+with open(os.path.join(root, "README.md"), "w") as f:
+    f.write(readme)
+
+# Zip it
+zip_path = "/mnt/data/pratibha-portfolio.zip"
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+    for folder, _, files in os.walk(root):
+        for file in files:
+            file_path = os.path.join(folder, file)
+            zf.write(file_path, arcname=os.path.relpath(file_path, root))
+
+zip_path
