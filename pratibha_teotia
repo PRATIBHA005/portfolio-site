@@ -765,49 +765,7 @@ app_jsx = textwrap.dedent("""\
     );
   }
 """)
-with open(os.path.join(root, "src/App.jsx"), "w") as f:
-    f.write(app_jsx)
 
-# README
-readme = textwrap.dedent("""\
-  # Pratibha — Interactive 3D Portfolio (Vite + React + Three + Tailwind)
 
-  ## 🚀 Quick Start (Local)
-  1) Install Node.js LTS (https://nodejs.org)
-  2) In this folder, run:
-     ```bash
-     npm install
-     npm run dev
-     ```
-  3) Open the local link (usually http://localhost:5173).
 
-  ## 🌐 Deploy to Vercel (Recommended)
-  1) Create a GitHub repo and push this folder:
-     ```bash
-     git init
-     git add .
-     git commit -m "Initial"
-     git branch -M main
-     git remote add origin https://github.com/<your-username>/portfolio-site.git
-     git push -u origin main
-     ```
-  2) Go to https://vercel.com → New Project → Import `portfolio-site` → Deploy.
-  3) You’ll get a live link like: https://portfolio-site.vercel.app
 
-  ## 🔧 Customize
-  - Edit `src/App.jsx` → the `profile` object for your email, phone, LinkedIn, summary, highlights, skills, and projects.
-  - Set `FORM_ENDPOINT` to a Formspree endpoint to enable the in-app contact form.
-  - Use the header controls to switch color palette and 3D scene (Globe/Monogram).
-""")
-with open(os.path.join(root, "README.md"), "w") as f:
-    f.write(readme)
-
-# Zip it
-zip_path = "/mnt/data/pratibha-portfolio.zip"
-with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-    for folder, _, files in os.walk(root):
-        for file in files:
-            file_path = os.path.join(folder, file)
-            zf.write(file_path, arcname=os.path.relpath(file_path, root))
-
-zip_path
